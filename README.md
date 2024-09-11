@@ -9,33 +9,20 @@ LEV is [libev](http://software.schmorp.de/pkg/libev.html) bindings for Common Li
 
 (cffi:defcallback stdin-cb :void ((evloop :pointer) (io :pointer) (revents :int))
   (declare (ignore revents))
-  (format t "stdin ready~%")
   (lev:ev-io-stop evloop io))
 
-(cffi:defcallback timeout-cb :void ((evloop :pointer) (timer :pointer) (revents :int))
-  (declare (ignore timer revents))
-  (format t "timeout~%")
-  (lev:ev-break evloop lev:+EVBREAK-ONE+))
+(setf client-socket-fd 5)
 
-(let ((evloop (lev:ev-default-loop 0))
-      (stdin-watcher (cffi:foreign-alloc '(:struct lev:ev-io)))
-      (timeout-watcher (cffi:foreign-alloc '(:struct lev:ev-timer))))
-  (unwind-protect
-      (progn
-        ;; initialize an io watcher, then start it
-        ;; this one will watch for stdin to become readable
-        (lev:ev-io-init stdin-watcher 'stdin-cb 0 lev:+EV-READ+)
-        (lev:ev-io-start evloop stdin-watcher)
+(setf evloop (lev:ev-default-loop 0))
+(sb-thread:make-thread
+  (lambda ()
+    (lev:ev-run evloop 0) ))
 
-        ;; initialize a timer watcher, then start it
-        ;; simple non-repeating 5.5 second timeout
-        (lev:ev-timer-init timeout-watcher 'timeout-cb 5.5d0 0d0)
-        (lev:ev-timer-start evloop timeout-watcher)
-
-        (format t "running~%")
-        (lev:ev-run evloop 0))
-    (cffi:foreign-free stdin-watcher)
-    (cffi:foreign-free timeout-watcher)))
+(setf stdin-watcher (cffi:foreign-alloc '(:struct lev:ev-io)))
+(lev:ev-io-init stdin-watcher 'stdin-cb client-socket-fd lev:+EV-READ+)
+(lev:ev-io-start evloop stdin-watcher)
+        
+(cffi:foreign-free stdin-watcher)
 ```
 
 ## Why not cl-ev?
