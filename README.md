@@ -18,7 +18,9 @@ LEV is [libev](http://software.schmorp.de/pkg/libev.html) bindings for Common Li
   (lambda ()
     (lev:ev-run evloop 0) ))
 
-(setf stdin-watcher (cffi:foreign-alloc '(:struct lev:ev-io)))
+(cffi:defctype c-ev-io (:struct lev::ev-io))
+
+(setf stdin-watcher (cffi:foreign-alloc 'c-ev-io))
 (lev:ev-io-init stdin-watcher 'stdin-cb client-socket-fd lev:+EV-READ+)
 (lev:ev-io-start evloop stdin-watcher)
         
